@@ -2,3 +2,12 @@ ioh
 iohinspector
 modcma
 numpy
+matplotlib
+optuna
+smac
+scikit-learn
+ConfigSpace
+scikit-optimize
+ax-platform
+botorch
+torch
