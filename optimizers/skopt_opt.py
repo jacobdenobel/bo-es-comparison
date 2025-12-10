@@ -4,7 +4,7 @@ Scikit-Optimize (skopt) optimizer implementation.
 
 import numpy as np
 import ioh
-from base_optimizer import BaseOptimizer
+from .base_optimizer import BaseOptimizer
 
 try:
     from skopt import gp_minimize

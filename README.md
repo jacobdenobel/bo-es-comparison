@@ -20,11 +20,27 @@ bo-es-comparison/
 ├── benchmark.py           # Benchmark runner
 ├── analysis.py           # Results analysis and visualization
 ├── run_custom_benchmark.py # Custom benchmark with CLI arguments
+├── setup.sh              # Automated setup script (bash)
+├── setup.py              # Automated setup script (Python)
 ├── requirements.txt      # Package dependencies
 └── README.md            # This file
 ```
 
 ## Installation
+
+### Quick Setup (Automated)
+
+Run the setup script to automatically create the environment and install packages:
+
+```bash
+# Using bash script (Linux/macOS)
+./setup.sh
+
+# OR using Python script (cross-platform)
+python setup.py
+```
+
+### Manual Setup
 
 ### 1. Create conda environment with Python 3.12
 ```bash

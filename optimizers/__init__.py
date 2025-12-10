@@ -2,28 +2,28 @@
 Optimizer factory for creating optimizer instances.
 """
 
-from optimizers.random_search import RandomSearchOptimizer
-from optimizers.cmaes import CMAESOptimizer, OnePlusOneCMAESOptimizer
-from optimizers.optuna_opt import OptunaOptimizer
-from optimizers.smac_opt import SMACOptimizer
+from .random_search import RandomSearchOptimizer
+from .cmaes import CMAESOptimizer, OnePlusOneCMAESOptimizer
+from .optuna_opt import OptunaOptimizer
+from .smac_opt import SMACOptimizer
 
 # Import new optimizers conditionally to avoid import errors
 try:
-    from optimizers.skopt_opt import SkoptOptimizer
+    from .skopt_opt import SkoptOptimizer
 
     SKOPT_IMPORT_OK = True
 except ImportError:
     SKOPT_IMPORT_OK = False
 
 try:
-    from optimizers.ax_opt import AxOptimizer
+    from .ax_opt import AxOptimizer
 
     AX_IMPORT_OK = True
 except ImportError:
     AX_IMPORT_OK = False
 
 try:
-    from optimizers.botorch_opt import BoTorchOptimizer
+    from .botorch_opt import BoTorchOptimizer
 
     BOTORCH_IMPORT_OK = True
 except ImportError:

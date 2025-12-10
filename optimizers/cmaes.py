@@ -3,7 +3,7 @@ CMA-ES optimizer implementations.
 """
 
 import ioh
-from base_optimizer import BaseOptimizer
+from .base_optimizer import BaseOptimizer
 
 try:
     from modcma import c_maes
