@@ -39,16 +39,46 @@ class SMACOptimizer(BaseOptimizer):
                 Float(f"x{i}", (problem.bounds.lb[i], problem.bounds.ub[i]))
             )
 
+        # Track function evaluations
+        evaluation_count = 0
+        
         def objective(config: Configuration, seed: int = 0) -> float:
             """Objective function for SMAC."""
+            nonlocal evaluation_count
+            
             x = np.array(
                 [config[f"x{i}"] for i in range(problem.meta_data.n_variables)]
             )
-            return problem(x)
+            
+            # Call IOH problem to ensure logging
+            result = problem(x)
+            evaluation_count += 1
+            
+            return result
 
-        # Create scenario
-        scenario = Scenario(cs, deterministic=True, n_trials=budget, seed=42)
+        # Create scenario with proper budget - ensure SMAC uses all trials
+        scenario = Scenario(
+            configspace=cs, 
+            deterministic=True, 
+            n_trials=budget, 
+            seed=42
+        )
 
-        # Create SMAC facade and optimize
-        smac = HyperparameterOptimizationFacade(scenario, objective)
-        incumbent = smac.optimize()
+        try:
+            # Create SMAC facade and optimize
+            smac = HyperparameterOptimizationFacade(scenario, objective, overwrite=True)
+            incumbent = smac.optimize()
+            
+            # If SMAC finished early, fill remaining budget with random search
+            while evaluation_count < budget and problem.state.evaluations < budget:
+                x = np.random.uniform(problem.bounds.lb, problem.bounds.ub)
+                problem(x)
+                evaluation_count += 1
+                
+        except Exception as e:
+            # If SMAC fails, fall back to random search to use remaining budget
+            print(f"SMAC optimization failed: {e}. Falling back to random sampling.")
+            while evaluation_count < budget and problem.state.evaluations < budget:
+                x = np.random.uniform(problem.bounds.lb, problem.bounds.ub)
+                problem(x)
+                evaluation_count += 1

@@ -41,8 +41,32 @@ class BenchmarkRunner:
         if logger is not None:
             problem.attach_logger(logger)
 
+        configured_samples = get_initial_samples(function_id, dimension)
+        initial_samples = [
+            np.asarray(sample, dtype=float) for sample in configured_samples
+        ]
+        for idx, sample in enumerate(initial_samples):
+            if sample.shape[0] != problem.meta_data.n_variables:
+                raise ValueError(
+                    f"Initial sample #{idx} for f{function_id} in dimension {dimension} "
+                    f"has {sample.shape[0]} variables, "
+                    f"expected {problem.meta_data.n_variables}."
+                )
+
         for rep in range(N_REP):
-            optimizer.optimize(problem, budget)
+            used_budget = 0
+
+            if initial_samples:
+                for sample in initial_samples:
+                    if used_budget >= budget:
+                        break
+                    problem(sample)
+                    used_budget += 1
+
+            remaining_budget = max(0, budget - used_budget)
+            if remaining_budget > 0:
+                optimizer.optimize(problem, remaining_budget)
+
             problem.reset()
 
     def run_benchmark(

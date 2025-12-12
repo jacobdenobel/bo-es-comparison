@@ -50,10 +50,6 @@ class OptunaOptimizer(BaseOptimizer):
         # Create study and optimize
         if self.sampler_name == "TPE":
             sampler = optuna.samplers.TPESampler(seed=42)
-        elif self.sampler_name == "Random":
-            sampler = optuna.samplers.RandomSampler(seed=42)
-        elif self.sampler_name == "CmaEs":
-            sampler = optuna.samplers.CmaEsSampler(seed=42)
         else:
             sampler = optuna.samplers.TPESampler(seed=42)
 

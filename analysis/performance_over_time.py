@@ -98,7 +98,7 @@ class ResultAnalyzer:
             print(f"Error loading data: {e}")
             return None
 
-    def plot_all_functions(self, dimension: int = 2, figsize: tuple = (24, 18)) -> None:
+    def plot_all_functions(self, dimension: int = 2, figsize: tuple = (20, 20)) -> None:
         """
         Plot convergence curves for all 24 BBOB functions in a 6x4 grid.
 
@@ -110,11 +110,21 @@ class ResultAnalyzer:
             print("iohinspector required for plotting")
             return
 
-        # Create 6x4 subplot grid for 24 functions
+        # Define unified font sizes for consistency
+        FONT_SIZES = {
+            'function_id': 11,  # Function ID in upper right
+            'axis_label': 11,   # X and Y axis labels
+            'tick_label': 10,   # Tick labels
+            'text': 10,         # Error and "No data" text
+            'suptitle': 18,     # Overall figure title
+            'legend': 11        # Legend text
+        }
+
+        # Create 6x4 subplot grid for 24 functions with more square subplots
         fig, axes = plt.subplots(6, 4, figsize=figsize, squeeze=False)
 
-        # Adjust figure size to accommodate legends
-        fig.subplots_adjust(right=0.85, hspace=0.3, wspace=0.3)
+        # Adjust spacing to make subplots more square
+        fig.subplots_adjust(right=0.85, hspace=0.4, wspace=0.4)
 
         function_ids = list(range(1, 25))  # Functions 1-24
 
@@ -129,16 +139,20 @@ class ResultAnalyzer:
             if df is not None and len(df) > 0:
                 try:
                     iohinspector.plot.single_function_fixedbudget(df, ax=ax)
-                    ax.set_title(f"F{fid} (D={dimension})", fontsize=10)
                     ax.grid(True, alpha=0.3)
+
+                    # Add function ID in upper right corner
+                    ax.text(0.95, 0.95, f"F{fid}", transform=ax.transAxes, 
+                           fontsize=FONT_SIZES['function_id'], ha='right', va='top',
+                           bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
 
                     # Remove all individual legends
                     ax.legend().set_visible(False)
 
-                    # Adjust label sizes
-                    ax.tick_params(labelsize=8)
-                    ax.set_xlabel("evaluations", fontsize=9)
-                    ax.set_ylabel("best value", fontsize=9)
+                    # Adjust label sizes consistently
+                    ax.tick_params(labelsize=FONT_SIZES['tick_label'])
+                    ax.set_xlabel("evaluations", fontsize=FONT_SIZES['axis_label'])
+                    ax.set_ylabel("best value", fontsize=FONT_SIZES['axis_label'])
 
                 except Exception as e:
                     ax.text(
@@ -147,9 +161,12 @@ class ResultAnalyzer:
                         f"Error: {str(e)[:50]}...",
                         transform=ax.transAxes,
                         ha="center",
-                        fontsize=8,
+                        fontsize=FONT_SIZES['text'],
                     )
-                    ax.set_title(f"F{fid} (Error)", fontsize=10)
+                    # Add function ID in upper right corner for error case
+                    ax.text(0.95, 0.95, f"F{fid}", transform=ax.transAxes, 
+                           fontsize=FONT_SIZES['function_id'], ha='right', va='top',
+                           bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
             else:
                 ax.text(
                     0.5,
@@ -157,14 +174,17 @@ class ResultAnalyzer:
                     "No data",
                     transform=ax.transAxes,
                     ha="center",
-                    fontsize=10,
+                    fontsize=FONT_SIZES['text'],
                 )
-                ax.set_title(f"F{fid} (No data)", fontsize=10)
+                # Add function ID in upper right corner for no data case
+                ax.text(0.95, 0.95, f"F{fid}", transform=ax.transAxes, 
+                       fontsize=FONT_SIZES['function_id'], ha='right', va='top',
+                       bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
 
         # Add overall title
         fig.suptitle(
             f"BBOB Functions 1-24 Comparison (Dimension {dimension})",
-            fontsize=16,
+            fontsize=FONT_SIZES['suptitle'],
             y=0.98,
         )
 
@@ -188,7 +208,7 @@ class ResultAnalyzer:
                     loc="lower center",
                     bbox_to_anchor=(0.5, -0.02),
                     ncol=min(len(labels), 6),
-                    fontsize=10,
+                    fontsize=FONT_SIZES['legend'],
                     frameon=True,
                     fancybox=True,
                     shadow=True,
