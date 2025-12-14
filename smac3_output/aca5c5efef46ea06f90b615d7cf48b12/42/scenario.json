@@ -1,5 +1,5 @@
 {
-    "name": "df4424cdd7210b829ad3beef58d43b17",
+    "name": "aca5c5efef46ea06f90b615d7cf48b12",
     "deterministic": true,
     "objectives": "cost",
     "crash_cost": Infinity,
@@ -8,7 +8,7 @@
     "cputime_limit": Infinity,
     "trial_walltime_limit": null,
     "trial_memory_limit": null,
-    "n_trials": 90,
+    "n_trials": 270,
     "use_default_config": false,
     "instances": null,
     "instance_features": null,
@@ -29,9 +29,44 @@
             "types": [
                 0,
                 0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
                 0
             ],
             "bounds": [
+                [
+                    0,
+                    1.0
+                ],
+                [
+                    0,
+                    1.0
+                ],
+                [
+                    0,
+                    1.0
+                ],
+                [
+                    0,
+                    1.0
+                ],
+                [
+                    0,
+                    1.0
+                ],
+                [
+                    0,
+                    1.0
+                ],
+                [
+                    0,
+                    1.0
+                ],
                 [
                     0,
                     1.0
@@ -103,7 +138,7 @@
         },
         "initial_design": {
             "name": "SobolInitialDesign",
-            "n_configs": 22,
+            "n_configs": 67,
             "n_configs_per_hyperparameter": 10,
             "additional_configs": [],
             "seed": 42
@@ -133,5 +168,5 @@
         },
         "version": "2.3.1"
     },
-    "output_directory": "smac3_output/df4424cdd7210b829ad3beef58d43b17/42"
+    "output_directory": "smac3_output/aca5c5efef46ea06f90b615d7cf48b12/42"
 }

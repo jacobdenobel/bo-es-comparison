@@ -53,6 +53,13 @@ class BenchmarkRunner:
                     f"expected {problem.meta_data.n_variables}."
                 )
 
+        target_initial = max(len(initial_samples), DOE_FACTOR * dimension)
+        target_initial = min(budget, target_initial)
+
+        while len(initial_samples) < target_initial:
+            init_sample = np.random.uniform(problem.bounds.lb, problem.bounds.ub)
+            initial_samples.append(init_sample)
+
         for rep in range(N_REP):
             used_budget = 0
 
@@ -150,9 +157,25 @@ def main():
     available_opts = get_available_optimizers()
     print("Available optimizers:", available_opts)
 
+    if OPTIMIZER_NAMES:
+        normalized_available = {name.lower(): name for name in available_opts}
+        requested_opt_names = []
+        for requested in OPTIMIZER_NAMES:
+            key = requested.lower()
+            if key not in normalized_available:
+                print(f"✗ Requested optimizer '{requested}' is not available and will be skipped.")
+                continue
+            requested_opt_names.append(normalized_available[key])
+
+        if not requested_opt_names:
+            print("No requested optimizers are available. Exiting.")
+            return
+    else:
+        requested_opt_names = available_opts
+
     # Create optimizer instances
     optimizers = []
-    for opt_name in available_opts:
+    for opt_name in requested_opt_names:
         try:
             optimizer = create_optimizer(opt_name)
             optimizers.append(optimizer)

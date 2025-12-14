@@ -1,5 +1,5 @@
 {
-    "name": "6fdd8740d0e9c51bbb49b669ac5de7b4",
+    "name": "0c66a910e1b57aa9eb62986e7ede9ae9",
     "deterministic": true,
     "objectives": "cost",
     "crash_cost": Infinity,
@@ -8,7 +8,7 @@
     "cputime_limit": Infinity,
     "trial_walltime_limit": null,
     "trial_memory_limit": null,
-    "n_trials": 60,
+    "n_trials": 135,
     "use_default_config": false,
     "instances": null,
     "instance_features": null,
@@ -28,9 +28,24 @@
             "name": "RandomForest",
             "types": [
                 0,
+                0,
+                0,
+                0,
                 0
             ],
             "bounds": [
+                [
+                    0,
+                    1.0
+                ],
+                [
+                    0,
+                    1.0
+                ],
+                [
+                    0,
+                    1.0
+                ],
                 [
                     0,
                     1.0
@@ -98,7 +113,7 @@
         },
         "initial_design": {
             "name": "SobolInitialDesign",
-            "n_configs": 15,
+            "n_configs": 33,
             "n_configs_per_hyperparameter": 10,
             "additional_configs": [],
             "seed": 42
@@ -128,5 +143,5 @@
         },
         "version": "2.3.1"
     },
-    "output_directory": "smac3_output/6fdd8740d0e9c51bbb49b669ac5de7b4/42"
+    "output_directory": "smac3_output/0c66a910e1b57aa9eb62986e7ede9ae9/42"
 }

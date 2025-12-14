@@ -114,9 +114,9 @@ class ResultAnalyzer:
         FONT_SIZES = {
             'function_id': 11,  # Function ID in upper right
             'axis_label': 11,   # X and Y axis labels
-            'tick_label': 10,   # Tick labels
-            'text': 10,         # Error and "No data" text
-            'suptitle': 18,     # Overall figure title
+            'tick_label': 11,   # Tick labels
+            'text': 11,         # Error and "No data" text
+            'suptitle': 11,     # Overall figure title
             'legend': 11        # Legend text
         }
 

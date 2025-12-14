@@ -5,24 +5,14 @@ Configuration settings for the BBOB benchmark experiments.
 # Problem settings
 FUNCTIONS = list(range(1, 25))  # BBOB functions 1-24
 INSTANCES = list(range(1, 15))  # Problem instances 1-14
-DIMENSIONS = (2,3, 10)     # Problem dimensions to test
+DIMENSIONS = (2, 3, 5, 10)     # Problem dimensions to test
 N_REP = 5                      # Number of repetitions per experiment
 BUDGET_FACTOR = 30             # Budget = BUDGET_FACTOR * dimension
-DOE_FACTOR = 3                 # Design of Experiments factor
+DOE_FACTOR = 3                 # Design of Experiments factor (evaluations = DOE_FACTOR * dimension when no custom samples)
+OPTIMIZER_NAMES = []           # Optional list of optimizer identifiers to run (e.g., ["smac"])
 
-# Optional initial samples for each (dimension, function).
-# Structure:
-# INITIAL_SAMPLES = {
-#     10: {              # dimension
-#         "default": [   # used when a function specific list is not provided
-#             [0.0, ..., 0.0],
-#         ],
-#         4: [           # function id specific samples (here function 4)
-#             [...],
-#         ],
-#     },
-# }
-# Leave empty to fall back to purely algorithm-driven initialization.
+
+# Leave empty to fall back to DOE-based random initialization.
 INITIAL_SAMPLES = {}
 
 # Random seed for reproducibility
