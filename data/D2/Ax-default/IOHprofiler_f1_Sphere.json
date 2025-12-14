@@ -1,0 +1,18 @@
+{
+	"version": "0.3.22", 
+	"suite": "unknown_suite", 
+	"function_id": 1, 
+	"function_name": "Sphere", 
+	"maximization": false, 
+	"algorithm": {"name": "Ax-default", "info": "algorithm_info"},
+	"attributes": ["evaluations", "raw_y"],
+	"scenarios": [
+		{"dimension": 2,
+		"path": "data_f1_Sphere/IOHprofiler_f1_DIM2.dat",
+		"runs": [
+			{"instance": 1, "evals": 6, "best": {"evals": 2, "y": 9.095180838718877, "x": [-2.3668498481486533, 0.33739393380297744]}},
+			{"instance": 3, "evals": 6, "best": {"evals": 1, "y": 5.884142741688806, "x": [-1.9010241550997076, 1.7145264521200265]}},
+			{"instance": 7, "evals": 6, "best": {"evals": 1, "y": 13.384874601669413, "x": [-0.19953216673109786, 3.884475272296929]}}
+		]}
+	]
+}
