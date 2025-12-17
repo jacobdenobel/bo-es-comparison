@@ -26,7 +26,7 @@ class AxOptimizer(BaseOptimizer):
             budget: Maximum number of function evaluations
         """
         # Create Ax client
-        ax_client = AxClient(random_seed=42)
+        ax_client = AxClient(random_seed=seed)
 
         # Create experiment
         parameters = []
@@ -47,6 +47,7 @@ class AxOptimizer(BaseOptimizer):
             name="bbob_experiment",
             parameters=parameters,
             objectives={"objective": ObjectiveProperties(minimize=True)},
+            
         )
 
         # Run optimization loop
@@ -64,5 +65,6 @@ class AxOptimizer(BaseOptimizer):
 
             # Complete trial
             ax_client.complete_trial(
-                trial_index=trial_index, raw_data={"objective": (y, 0.0)}
+                trial_index=trial_index, raw_data={"objective": y}
             )
+            

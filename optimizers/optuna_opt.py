@@ -40,7 +40,7 @@ class OptunaOptimizer(BaseOptimizer):
             return problem(x)
 
         # Create study and optimize
-        sampler = optuna.samplers.TPESampler(seed=42)
+        sampler = optuna.samplers.TPESampler(seed=seed)
 
         study = optuna.create_study(direction="minimize", sampler=sampler)
         study.optimize(objective, n_trials=budget, show_progress_bar=False)

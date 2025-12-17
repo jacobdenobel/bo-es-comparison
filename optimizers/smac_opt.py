@@ -51,7 +51,7 @@ class SMACOptimizer(BaseOptimizer):
             configspace=cs,
             deterministic=True,
             n_trials=int(budget),
-            seed=42,
+            seed=seed,
         )
 
         smac = BlackBoxFacade(
