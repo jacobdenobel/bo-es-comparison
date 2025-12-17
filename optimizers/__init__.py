@@ -45,7 +45,9 @@ def create_optimizer(optimizer_name: str):
         "cmaes": CMAESOptimizer,
         "one_plus_one_cmaes": OnePlusOneCMAESOptimizer,
         "optuna_tpe": lambda: OptunaOptimizer("TPE"),
-        "smac": SMACOptimizer,
+        "optuna_random": lambda: OptunaOptimizer("Random"),
+        "optuna_cmaes": lambda: OptunaOptimizer("CmaEs"),
+        "smac3": SMACOptimizer,
     }
 
     # Add new optimizers if imports succeeded
@@ -95,7 +97,7 @@ def get_available_optimizers():
     try:
         import smac
 
-        available.append("smac")
+        available.extend(["smac3"])
     except ImportError:
         pass
 

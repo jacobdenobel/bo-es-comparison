@@ -1,185 +1,182 @@
 """
-Benchmark runner for comparing optimization algorithms on BBOB functions.
+benchmark.py
+
+Benchmark runner for comparing optimization algorithms on BBOB (IOH) functions.
+
+Run:
+    python benchmark.py
 """
 
+from __future__ import annotations
+
 import ioh
-import numpy as np
 from typing import List, Optional
+
+from config import (
+    LOG_ROOT,
+    FUNCTIONS,
+    INSTANCES,
+    DIMENSIONS,
+    BUDGET_FACTOR,
+    N_REP,
+    RANDOM_SEED,
+)
+
 from optimizers.base_optimizer import BaseOptimizer, set_seeds
-from config import *
 
 
-class BenchmarkRunner:
-    """Runs benchmark experiments comparing multiple optimizers."""
+def _stable_seed(
+    base_seed: int,
+    optimizer_name: str,
+    function_id: int,
+    instance_id: int,
+    dimension: int,
+    rep: int,
+) -> int:
+    """
+    Deterministically map (optimizer, f, i, d, rep) -> seed.
+    Uses a stable hash so results are reproducible across runs/machines.
+    """
+    import hashlib
 
-    def __init__(self, log_root: str = LOG_ROOT):
-        self.log_root = log_root
-        self.results = {}
+    key = f"{base_seed}|{optimizer_name}|f{function_id}|i{instance_id}|d{dimension}|r{rep}"
+    digest = hashlib.blake2b(key.encode("utf-8"), digest_size=8).digest()
+    return int.from_bytes(digest, "little") % (2**32)
 
-    def run_single_experiment(
-        self,
-        optimizer: BaseOptimizer,
-        function_id: int,
-        instance_id: int,
-        dimension: int,
-        budget: int,
-        logger: Optional[ioh.logger.Analyzer] = None,
-    ) -> None:
-        """
-        Run a single optimization experiment.
 
-        Args:
-            optimizer: Optimizer instance
-            function_id: BBOB function ID (1-24)
-            instance_id: Problem instance ID
-            dimension: Problem dimension
-            budget: Function evaluation budget
-            logger: Optional IOH logger
-        """
-        problem = ioh.get_problem(function_id, instance_id, dimension)
+def run_single_experiment(
+    optimizer: BaseOptimizer,
+    function_id: int,
+    instance_id: int,
+    dimension: int,
+    budget: int,
+    logger: Optional[ioh.logger.Analyzer] = None,
+) -> None:
+    """
+    Run N_REP repetitions for one (optimizer, function, instance, dimension).
 
+    Notes:
+      - We set a different (but deterministic) seed per repetition to avoid identical reps.
+      - If your optimizer keeps state between runs, implement optimizer.reset() and it will
+        be called automatically per repetition.
+    """
+    problem = ioh.get_problem(function_id, instance_id, dimension)
+
+    if logger is not None:
+        problem.attach_logger(logger)
+
+    try:
+        for rep in range(N_REP):
+            seed = function_id * instance_id * dimension * (1 + rep) * 7
+            set_seeds(seed)
+
+            # Reset optimizer state per repetition if supported
+            if hasattr(optimizer, "reset") and callable(getattr(optimizer, "reset")):
+                optimizer.reset()
+
+            optimizer.optimize(problem, budget)
+            problem.reset()
+    finally:
         if logger is not None:
-            problem.attach_logger(logger)
+            problem.detach_logger()
 
-        configured_samples = get_initial_samples(function_id, dimension)
-        initial_samples = [
-            np.asarray(sample, dtype=float) for sample in configured_samples
-        ]
-        for idx, sample in enumerate(initial_samples):
-            if sample.shape[0] != problem.meta_data.n_variables:
-                raise ValueError(
-                    f"Initial sample #{idx} for f{function_id} in dimension {dimension} "
-                    f"has {sample.shape[0]} variables, "
-                    f"expected {problem.meta_data.n_variables}."
+
+def run_benchmark(
+    optimizers: List[BaseOptimizer],
+    functions: List[int] = FUNCTIONS,
+    instances: List[int] = INSTANCES,
+    dimensions: tuple = DIMENSIONS,
+    budget_factor: int = BUDGET_FACTOR,
+    log_results: bool = True,
+    log_root: str = LOG_ROOT,
+) -> None:
+    """
+    Run complete benchmark comparing multiple optimizers.
+    """
+    print(f"Starting benchmark with {len(optimizers)} optimizers...")
+    print(
+        f"Testing {len(functions)} functions, {len(instances)} instances, "
+        f"{len(dimensions)} dimensions, {N_REP} repetitions"
+    )
+    print(f"Logs root: {log_root}")
+
+    for optimizer in optimizers:
+        print(f"\nRunning optimizer: {optimizer.name}")
+
+        total_experiments = len(dimensions) * len(functions) * len(instances)
+        experiment_count = 0
+
+        for dim in dimensions:
+            print(f"  Running dimension {dim}...")
+
+            logger = None
+            if log_results:
+                # Structure: LOG_ROOT/D{dim}/{optimizer.name}/...
+                dim_folder = f"{log_root}/D{dim}"
+                logger = ioh.logger.Analyzer(
+                    algorithm_name=optimizer.name,
+                    folder_name=optimizer.name,
+                    root=dim_folder,
                 )
 
-        target_initial = max(len(initial_samples), DOE_FACTOR * dimension)
-        target_initial = min(budget, target_initial)
+            budget = budget_factor * dim
 
-        while len(initial_samples) < target_initial:
-            init_sample = np.random.uniform(problem.bounds.lb, problem.bounds.ub)
-            initial_samples.append(init_sample)
+            for fid in functions:
+                for iid in instances:
+                    experiment_count += 1
+                    if (
+                        experiment_count % 50 == 0
+                        or experiment_count == total_experiments
+                    ):
+                        progress = (experiment_count / total_experiments) * 100
+                        print(
+                            f"  Progress: {progress:.1f}% "
+                            f"({experiment_count}/{total_experiments})"
+                        )
 
-        for rep in range(N_REP):
-            used_budget = 0
+                    try:
+                        run_single_experiment(
+                            optimizer=optimizer,
+                            function_id=fid,
+                            instance_id=iid,
+                            dimension=dim,
+                            budget=budget,
+                            logger=logger,
+                        )
+                    except Exception as e:
+                        print(f"  Error in experiment f{fid}_i{iid}_d{dim}: {e}")
 
-            if initial_samples:
-                for sample in initial_samples:
-                    if used_budget >= budget:
-                        break
-                    problem(sample)
-                    used_budget += 1
+            # Close logger cleanly per dimension (Analyzer writes files as it goes,
+            # but closing helps flush resources)
+            if logger is not None:
+                try:
+                    logger.close()
+                except Exception:
+                    pass
 
-            remaining_budget = max(0, budget - used_budget)
-            if remaining_budget > 0:
-                optimizer.optimize(problem, remaining_budget)
+        print(f"  Completed {optimizer.name}")
 
-            problem.reset()
-
-    def run_benchmark(
-        self,
-        optimizers: List[BaseOptimizer],
-        functions: List[int] = FUNCTIONS,
-        instances: List[int] = INSTANCES,
-        dimensions: tuple = DIMENSIONS,
-        budget_factor: int = BUDGET_FACTOR,
-        log_results: bool = True,
-    ) -> None:
-        """
-        Run complete benchmark comparing multiple optimizers.
-
-        Args:
-            optimizers: List of optimizer instances
-            functions: List of BBOB function IDs to test
-            instances: List of problem instance IDs
-            dimensions: Tuple of dimensions to test
-            budget_factor: Budget = budget_factor * dimension
-            log_results: Whether to log results to files
-        """
-        print(f"Starting benchmark with {len(optimizers)} optimizers...")
-        print(
-            f"Testing {len(functions)} functions, {len(instances)} instances, "
-            f"{len(dimensions)} dimensions"
-        )
-
-        for optimizer in optimizers:
-            print(f"\nRunning optimizer: {optimizer.name}")
-
-            # Set seeds for reproducibility
-            set_seeds(RANDOM_SEED)
-
-            total_experiments = len(dimensions) * len(functions) * len(instances)
-            experiment_count = 0
-
-            for dim in dimensions:
-                print(f"  Running dimension {dim}...")
-
-                # Set up logger for this dimension and optimizer
-                logger = None
-                if log_results:
-                    # Structure: data/dimension/optimizer/
-                    dim_folder = f"{self.log_root}/D{dim}"
-                    logger = ioh.logger.Analyzer(
-                        algorithm_name=optimizer.name,
-                        folder_name=optimizer.name,
-                        root=dim_folder,
-                    )
-
-                budget = budget_factor * dim
-                for fid in functions:
-                    for iid in instances:
-                        experiment_count += 1
-                        if experiment_count % 50 == 0:
-                            progress = (experiment_count / total_experiments) * 100
-                            print(
-                                f"  Progress: {progress:.1f}% "
-                                f"({experiment_count}/{total_experiments})"
-                            )
-
-                        try:
-                            self.run_single_experiment(
-                                optimizer, fid, iid, dim, budget, logger
-                            )
-                        except Exception as e:
-                            print(f"  Error in experiment f{fid}_i{iid}_d{dim}: {e}")
-                            continue
-
-            print(f"  Completed {optimizer.name}")
-
-        print(f"\nBenchmark completed! Results saved to: {self.log_root}")
+    print(f"\nBenchmark completed! Results saved to: {log_root}")
 
 
-def main():
-    """Main function to run the benchmark."""
+def main() -> None:
+    """
+    Main entry point: creates all available optimizers and runs the full benchmark.
+
+    Run:
+        python benchmark.py
+    """
     from optimizers import create_optimizer, get_available_optimizers
 
-    # Get available optimizers
     available_opts = get_available_optimizers()
     print("Available optimizers:", available_opts)
 
-    if OPTIMIZER_NAMES:
-        normalized_available = {name.lower(): name for name in available_opts}
-        requested_opt_names = []
-        for requested in OPTIMIZER_NAMES:
-            key = requested.lower()
-            if key not in normalized_available:
-                print(f"✗ Requested optimizer '{requested}' is not available and will be skipped.")
-                continue
-            requested_opt_names.append(normalized_available[key])
-
-        if not requested_opt_names:
-            print("No requested optimizers are available. Exiting.")
-            return
-    else:
-        requested_opt_names = available_opts
-
-    # Create optimizer instances
-    optimizers = []
-    for opt_name in requested_opt_names:
+    optimizers: List[BaseOptimizer] = []
+    for opt_name in available_opts:
         try:
-            optimizer = create_optimizer(opt_name)
-            optimizers.append(optimizer)
-            print(f"✓ Created {optimizer.name}")
+            opt = create_optimizer(opt_name)
+            optimizers.append(opt)
+            print(f"✓ Created {opt.name}")
         except Exception as e:
             print(f"✗ Failed to create {opt_name}: {e}")
 
@@ -187,9 +184,15 @@ def main():
         print("No optimizers available! Please install required packages.")
         return
 
-    # Run benchmark
-    runner = BenchmarkRunner()
-    runner.run_benchmark(optimizers)
+    run_benchmark(
+        optimizers=optimizers,
+        functions=FUNCTIONS,
+        instances=INSTANCES,
+        dimensions=DIMENSIONS,
+        budget_factor=BUDGET_FACTOR,
+        log_results=True,
+        log_root=LOG_ROOT,
+    )
 
 
 if __name__ == "__main__":

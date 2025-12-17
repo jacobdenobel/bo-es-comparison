@@ -23,4 +23,4 @@ class RandomSearchOptimizer(BaseOptimizer):
         """
         for _ in range(budget):
             x = np.random.uniform(problem.bounds.lb, problem.bounds.ub)
-            y = problem(x)
+            problem(x)

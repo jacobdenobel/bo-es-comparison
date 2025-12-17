@@ -291,7 +291,6 @@ class ViolinPlotAnalyzer:
         except Exception as e:
             print(f"Error creating violin plot for dimension {dimension}: {e}")
 
-
 def main():
     """Main function to demonstrate violin plot usage."""
     print("=== Violin Plot Analysis ===")
