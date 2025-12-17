@@ -19,7 +19,7 @@ class SMACOptimizer(BaseOptimizer):
     def __init__(self):
         super().__init__("SMAC3")
 
-    def optimize(self, problem: ioh.ProblemType, budget: int, seed:int) -> None:
+    def optimize(self, problem: ioh.ProblemType, budget: int, seed: int) -> None:
         # Create configuration space
         cs = ConfigurationSpace()
         for i in range(problem.meta_data.n_variables):
@@ -60,12 +60,3 @@ class SMACOptimizer(BaseOptimizer):
             overwrite=True,
         )
         smac.optimize()
-
-        # If SMAC stops early, consume remaining budget with random search
-        while evaluation_count < budget and problem.state.evaluations < budget:
-            x = np.random.uniform(problem.bounds.lb, problem.bounds.ub).astype(
-                float
-            )
-            problem(x)
-            evaluation_count += 1
-

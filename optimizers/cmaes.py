@@ -15,7 +15,7 @@ class CMAESOptimizer(BaseOptimizer):
     def __init__(self):
         super().__init__("CMA-ES")
 
-    def optimize(self, problem: ioh.ProblemType, budget: int, seed:int) -> None:
+    def optimize(self, problem: ioh.ProblemType, budget: int, seed: int) -> None:
         """
         CMA-ES optimization.
 
@@ -26,7 +26,7 @@ class CMAESOptimizer(BaseOptimizer):
         settings = c_maes.settings_from_dict(
             problem.meta_data.n_variables,
             x0=np.random.uniform(problem.bounds.lb, problem.bounds.ub),
-            budget=budget+1,
+            budget=budget + 1,
             lb=problem.bounds.lb,
             ub=problem.bounds.ub,
             target=problem.optimum.y + 1e-8,
@@ -43,7 +43,7 @@ class OnePlusOneCMAESOptimizer(BaseOptimizer):
     def __init__(self):
         super().__init__("(1+1)-CMA-ES")
 
-    def optimize(self, problem: ioh.ProblemType, budget: int, seed:int) -> None:
+    def optimize(self, problem: ioh.ProblemType, budget: int, seed: int) -> None:
         """
         (1+1)-CMA-ES optimization.
 
@@ -54,7 +54,7 @@ class OnePlusOneCMAESOptimizer(BaseOptimizer):
         settings = c_maes.settings_from_dict(
             problem.meta_data.n_variables,
             x0=np.random.uniform(problem.bounds.lb, problem.bounds.ub),
-            budget=budget+1,
+            budget=budget + 1,
             lb=problem.bounds.lb,
             ub=problem.bounds.ub,
             sigma0=0.3 * (problem.bounds.ub[0] - problem.bounds.lb[0]),

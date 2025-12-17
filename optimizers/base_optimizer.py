@@ -26,7 +26,7 @@ class BaseOptimizer(abc.ABC):
             budget: Maximum number of function evaluations
         """
         pass
-    
+
     def reset(self) -> None:
         pass
 

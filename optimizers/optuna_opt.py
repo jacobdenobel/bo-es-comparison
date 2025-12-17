@@ -8,6 +8,7 @@ from .base_optimizer import BaseOptimizer
 
 import optuna
 
+
 class OptunaOptimizer(BaseOptimizer):
     """Optuna TPE optimizer."""
 
@@ -15,7 +16,7 @@ class OptunaOptimizer(BaseOptimizer):
         super().__init__(f"Optuna-{sampler_name}")
         self.sampler_name = sampler_name
 
-    def optimize(self, problem: ioh.ProblemType, budget: int, seed:int) -> None:
+    def optimize(self, problem: ioh.ProblemType, budget: int, seed: int) -> None:
         """
         Optuna optimization using TPE sampler.
 
@@ -39,10 +40,7 @@ class OptunaOptimizer(BaseOptimizer):
             return problem(x)
 
         # Create study and optimize
-        if self.sampler_name == "TPE":
-            sampler = optuna.samplers.TPESampler(seed=42)
-        else:
-            sampler = optuna.samplers.TPESampler(seed=42)
+        sampler = optuna.samplers.TPESampler(seed=42)
 
         study = optuna.create_study(direction="minimize", sampler=sampler)
         study.optimize(objective, n_trials=budget, show_progress_bar=False)

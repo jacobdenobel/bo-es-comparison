@@ -13,7 +13,7 @@ class RandomSearchOptimizer(BaseOptimizer):
     def __init__(self):
         super().__init__("RandomSearch")
 
-    def optimize(self, problem: ioh.ProblemType, budget: int, seed:int) -> None:
+    def optimize(self, problem: ioh.ProblemType, budget: int, seed: int) -> None:
         """
         Random search optimization.
 

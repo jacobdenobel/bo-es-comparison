@@ -7,8 +7,7 @@ import ioh
 from .base_optimizer import BaseOptimizer
 
 
-from ax.service.ax_client import AxClient
-from ax.utils.measurement.synthetic_functions import hartmann6
+from ax.service.ax_client import AxClient, ObjectiveProperties
 
 
 class AxOptimizer(BaseOptimizer):
@@ -18,7 +17,7 @@ class AxOptimizer(BaseOptimizer):
         super().__init__(f"Ax-{strategy}")
         self.strategy = strategy
 
-    def optimize(self, problem: ioh.ProblemType, budget: int, seed:int) -> None:
+    def optimize(self, problem: ioh.ProblemType, budget: int, seed: int) -> None:
         """
         Ax optimization.
 
@@ -43,11 +42,11 @@ class AxOptimizer(BaseOptimizer):
                 }
             )
 
+        # NEW API: objectives dict instead of objective_name/minimize
         ax_client.create_experiment(
             name="bbob_experiment",
             parameters=parameters,
-            objective_name="objective",
-            minimize=True,
+            objectives={"objective": ObjectiveProperties(minimize=True)},
         )
 
         # Run optimization loop
@@ -67,4 +66,3 @@ class AxOptimizer(BaseOptimizer):
             ax_client.complete_trial(
                 trial_index=trial_index, raw_data={"objective": (y, 0.0)}
             )
-

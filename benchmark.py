@@ -30,7 +30,6 @@ from optimizers import create_optimizer, get_available_optimizers
 from optimizers.base_optimizer import BaseOptimizer, set_seeds
 
 
-
 def run_single_experiment(
     optimizer: BaseOptimizer,
     function_id: int,
@@ -57,15 +56,15 @@ def run_single_experiment(
         set_seeds(seed)
         optimizer.reset()
         optimizer.optimize(problem, budget, seed)
-        
-        print(optimizer.__class__.__name__, 
-              problem.meta_data, 
-              problem.state.evaluations, 
-              problem.state.current_best
+
+        print(
+            optimizer.__class__.__name__,
+            problem.meta_data,
+            problem.state.evaluations,
+            problem.state.current_best,
         )
         problem.reset()
-    breakpoint()
-       
+
 
 def run_benchmark(
     optimizers: List[BaseOptimizer],
@@ -79,26 +78,64 @@ def run_benchmark(
     """
     Run complete benchmark comparing multiple optimizers.
     """
+    print(f"Starting benchmark with {len(optimizers)} optimizers...")
+    print(
+        f"Testing {len(functions)} functions, {len(instances)} instances, "
+        f"{len(dimensions)} dimensions, {N_REP} repetitions"
+    )
+    print(f"Logs root: {log_root}")
+
     for optimizer in optimizers:
-        logger = None
-        if log_results:
-            logger = ioh.logger.Analyzer(
-                algorithm_name=optimizer.name,
-                folder_name=optimizer.name,
-                root=log_root,
-            )
+        print(f"\nRunning optimizer: {optimizer.name}")
+
+        total_experiments = len(dimensions) * len(functions) * len(instances)
+        experiment_count = 0
+
         for dim in dimensions:
+            logger = None
+            if log_results:
+                # Structure: LOG_ROOT/D{dim}/{optimizer.name}/...
+                dim_folder = f"{log_root}/D{dim}"
+                logger = ioh.logger.Analyzer(
+                    algorithm_name=optimizer.name,
+                    folder_name=optimizer.name,
+                    root=dim_folder,
+                )
+
             budget = budget_factor * dim
+
             for fid in functions:
                 for iid in instances:
-                    run_single_experiment(
-                        optimizer=optimizer,
-                        function_id=fid,
-                        instance_id=iid,
-                        dimension=dim,
-                        budget=budget,
-                        logger=logger,
-                    )
+                    experiment_count += 1
+                    if (
+                        experiment_count % 50 == 0
+                        or experiment_count == total_experiments
+                    ):
+                        progress = (experiment_count / total_experiments) * 100
+                        print(
+                            f"  Progress: {progress:.1f}% "
+                            f"({experiment_count}/{total_experiments})"
+                        )
+
+                    try:
+                        run_single_experiment(
+                            optimizer=optimizer,
+                            function_id=fid,
+                            instance_id=iid,
+                            dimension=dim,
+                            budget=budget,
+                            logger=logger,
+                        )
+                    except Exception as e:
+                        print(f"  Error in experiment f{fid}_i{iid}_d{dim}: {e}")
+
+            # Close logger cleanly per dimension (Analyzer writes files as it goes,
+            # but closing helps flush resources)
+            if logger is not None:
+                try:
+                    logger.close()
+                except Exception:
+                    pass
 
 
 def main() -> None:
@@ -111,7 +148,7 @@ def main() -> None:
 
     available_opts = get_available_optimizers()
     print("Available optimizers:", available_opts)
-    
+
     optimizers: List[BaseOptimizer] = []
     for opt_name in available_opts:
         try:
@@ -124,9 +161,9 @@ def main() -> None:
     if not optimizers:
         print("No optimizers available! Please install required packages.")
         return
-    
+
     print("This only runs one function now w/o logging")
-    
+
     run_benchmark(
         optimizers=optimizers,
         functions=FUNCTIONS[:1],

@@ -9,7 +9,7 @@ from .config import DOE_FACTOR
 
 from skopt import gp_minimize
 from skopt.space import Real
-from skopt.acquisition import gaussian_ei
+
 
 class SkoptOptimizer(BaseOptimizer):
     """Scikit-Optimize Gaussian Process optimizer."""
@@ -18,7 +18,7 @@ class SkoptOptimizer(BaseOptimizer):
         super().__init__(f"Skopt-{acquisition}")
         self.acquisition = acquisition
 
-    def optimize(self, problem: ioh.ProblemType, budget: int, seed:int) -> None:
+    def optimize(self, problem: ioh.ProblemType, budget: int, seed: int) -> None:
         """
         Scikit-Optimize optimization.
 
@@ -32,7 +32,7 @@ class SkoptOptimizer(BaseOptimizer):
             dimensions.append(
                 Real(problem.bounds.lb[i], problem.bounds.ub[i], name=f"x{i}")
             )
-       
+
         result = gp_minimize(
             func=problem,
             dimensions=dimensions,
@@ -40,6 +40,5 @@ class SkoptOptimizer(BaseOptimizer):
             acq_func=self.acquisition,
             random_state=seed,
             n_initial_points=int(DOE_FACTOR * problem.meta_data.n_variables),
-            initial_point_generator="halton"
+            initial_point_generator="halton",
         )
- 
