@@ -25,24 +25,6 @@ from config import (
 from optimizers.base_optimizer import BaseOptimizer, set_seeds
 
 
-def _stable_seed(
-    base_seed: int,
-    optimizer_name: str,
-    function_id: int,
-    instance_id: int,
-    dimension: int,
-    rep: int,
-) -> int:
-    """
-    Deterministically map (optimizer, f, i, d, rep) -> seed.
-    Uses a stable hash so results are reproducible across runs/machines.
-    """
-    import hashlib
-
-    key = f"{base_seed}|{optimizer_name}|f{function_id}|i{instance_id}|d{dimension}|r{rep}"
-    digest = hashlib.blake2b(key.encode("utf-8"), digest_size=8).digest()
-    return int.from_bytes(digest, "little") % (2**32)
-
 
 def run_single_experiment(
     optimizer: BaseOptimizer,
