@@ -9,6 +9,9 @@ Run:
 
 from __future__ import annotations
 
+import multiprocessing
+from itertools import product
+
 import ioh
 from typing import List, Optional
 
@@ -22,6 +25,8 @@ from config import (
     RANDOM_SEED,
 )
 
+
+from optimizers import create_optimizer, get_available_optimizers
 from optimizers.base_optimizer import BaseOptimizer, set_seeds
 
 
@@ -47,21 +52,17 @@ def run_single_experiment(
     if logger is not None:
         problem.attach_logger(logger)
 
-    try:
-        for rep in range(N_REP):
-            seed = function_id * instance_id * dimension * (1 + rep) * 7
-            set_seeds(seed)
+    for rep in range(N_REP):
+        seed = RANDOM_SEED + (function_id * instance_id * dimension * (1 + rep) * 7)
+        set_seeds(seed)
 
-            # Reset optimizer state per repetition if supported
-            if hasattr(optimizer, "reset") and callable(getattr(optimizer, "reset")):
-                optimizer.reset()
+        # Reset optimizer state per repetition if supported
+        if hasattr(optimizer, "reset") and callable(getattr(optimizer, "reset")):
+            optimizer.reset()
 
-            optimizer.optimize(problem, budget)
-            problem.reset()
-    finally:
-        if logger is not None:
-            problem.detach_logger()
-
+        optimizer.optimize(problem, budget)
+        problem.reset()
+       
 
 def run_benchmark(
     optimizers: List[BaseOptimizer],
@@ -75,70 +76,30 @@ def run_benchmark(
     """
     Run complete benchmark comparing multiple optimizers.
     """
-    print(f"Starting benchmark with {len(optimizers)} optimizers...")
-    print(
-        f"Testing {len(functions)} functions, {len(instances)} instances, "
-        f"{len(dimensions)} dimensions, {N_REP} repetitions"
-    )
-    print(f"Logs root: {log_root}")
+    
 
     for optimizer in optimizers:
-        print(f"\nRunning optimizer: {optimizer.name}")
-
-        total_experiments = len(dimensions) * len(functions) * len(instances)
-        experiment_count = 0
-
+        logger = None
+        if log_results:
+            logger = ioh.logger.Analyzer(
+                algorithm_name=optimizer.name,
+                folder_name=optimizer.name,
+                root=log_root,
+            )
+        breakpoint()
         for dim in dimensions:
-            print(f"  Running dimension {dim}...")
-
-            logger = None
-            if log_results:
-                # Structure: LOG_ROOT/D{dim}/{optimizer.name}/...
-                dim_folder = f"{log_root}/D{dim}"
-                logger = ioh.logger.Analyzer(
-                    algorithm_name=optimizer.name,
-                    folder_name=optimizer.name,
-                    root=dim_folder,
-                )
-
             budget = budget_factor * dim
-
             for fid in functions:
                 for iid in instances:
                     experiment_count += 1
-                    if (
-                        experiment_count % 50 == 0
-                        or experiment_count == total_experiments
-                    ):
-                        progress = (experiment_count / total_experiments) * 100
-                        print(
-                            f"  Progress: {progress:.1f}% "
-                            f"({experiment_count}/{total_experiments})"
-                        )
-
-                    try:
-                        run_single_experiment(
-                            optimizer=optimizer,
-                            function_id=fid,
-                            instance_id=iid,
-                            dimension=dim,
-                            budget=budget,
-                            logger=logger,
-                        )
-                    except Exception as e:
-                        print(f"  Error in experiment f{fid}_i{iid}_d{dim}: {e}")
-
-            # Close logger cleanly per dimension (Analyzer writes files as it goes,
-            # but closing helps flush resources)
-            if logger is not None:
-                try:
-                    logger.close()
-                except Exception:
-                    pass
-
-        print(f"  Completed {optimizer.name}")
-
-    print(f"\nBenchmark completed! Results saved to: {log_root}")
+                    run_single_experiment(
+                        optimizer=optimizer,
+                        function_id=fid,
+                        instance_id=iid,
+                        dimension=dim,
+                        budget=budget,
+                        logger=logger,
+                    )
 
 
 def main() -> None:
@@ -148,11 +109,10 @@ def main() -> None:
     Run:
         python benchmark.py
     """
-    from optimizers import create_optimizer, get_available_optimizers
 
     available_opts = get_available_optimizers()
     print("Available optimizers:", available_opts)
-
+    
     optimizers: List[BaseOptimizer] = []
     for opt_name in available_opts:
         try:
@@ -165,7 +125,7 @@ def main() -> None:
     if not optimizers:
         print("No optimizers available! Please install required packages.")
         return
-
+    
     run_benchmark(
         optimizers=optimizers,
         functions=FUNCTIONS,

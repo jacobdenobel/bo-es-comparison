@@ -84,6 +84,16 @@ def get_available_optimizers():
         available.extend(["cmaes", "one_plus_one_cmaes"])
     except ImportError:
         pass
+    
+    # Check for scikit-optimize
+    try:
+        import skopt
+
+        available.extend(["skopt_ei", "skopt_pi", "skopt_lcb"])
+    except ImportError:
+        pass
+    print("remove this return")
+    return available
 
     # Check for optuna
     try:
@@ -101,13 +111,6 @@ def get_available_optimizers():
     except ImportError:
         pass
 
-    # Check for scikit-optimize
-    try:
-        import skopt
-
-        available.extend(["skopt_ei", "skopt_pi", "skopt_lcb"])
-    except ImportError:
-        pass
 
     # Check for ax-platform
     try:
