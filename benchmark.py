@@ -125,6 +125,8 @@ def main() -> None:
         print("No optimizers available! Please install required packages.")
         return
     
+    print("This only runs one function now w/o logging")
+    
     run_benchmark(
         optimizers=optimizers,
         functions=FUNCTIONS[:1],
