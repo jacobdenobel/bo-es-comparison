@@ -2,21 +2,15 @@ import numpy as np
 import ioh
 from .base_optimizer import BaseOptimizer
 
+from smac import Scenario
+
+# Depending on SMAC version, one of these will exist:
 try:
-    from smac import Scenario
+    from smac import BlackBoxOptimizationFacade as BlackBoxFacade
+except Exception:
+    from smac import BlackBoxFacade  # older/newer naming in some releases
 
-    # Depending on SMAC version, one of these will exist:
-    try:
-        from smac import BlackBoxOptimizationFacade as BlackBoxFacade
-    except Exception:
-        from smac import BlackBoxFacade  # older/newer naming in some releases
-
-    from ConfigSpace import Configuration, ConfigurationSpace, Float
-
-    SMAC_AVAILABLE = True
-except ImportError:
-    SMAC_AVAILABLE = False
-    print("Warning: smac3 not available. SMAC optimizer will not work.")
+from ConfigSpace import Configuration, ConfigurationSpace, Float
 
 
 class SMACOptimizer(BaseOptimizer):
@@ -24,14 +18,12 @@ class SMACOptimizer(BaseOptimizer):
 
     def __init__(self):
         super().__init__("SMAC3")
-        if not SMAC_AVAILABLE:
-            raise ImportError("smac3 package is required for SMAC optimizer")
 
-    def optimize(self, problem: ioh.ProblemType, budget: int) -> None:
+    def optimize(self, problem: ioh.ProblemType, budget: int, seed:int) -> None:
         # Create configuration space
         cs = ConfigurationSpace()
         for i in range(problem.meta_data.n_variables):
-            cs.add_hyperparameter(
+            cs.add(
                 Float(
                     f"x{i}", (float(problem.bounds.lb[i]), float(problem.bounds.ub[i]))
                 )
@@ -62,29 +54,18 @@ class SMACOptimizer(BaseOptimizer):
             seed=42,
         )
 
-        try:
-            smac = BlackBoxFacade(
-                scenario=scenario,
-                target_function=objective,
-                overwrite=True,
-            )
-            smac.optimize()
+        smac = BlackBoxFacade(
+            scenario=scenario,
+            target_function=objective,
+            overwrite=True,
+        )
+        smac.optimize()
 
-            # If SMAC stops early, consume remaining budget with random search
-            while evaluation_count < budget and problem.state.evaluations < budget:
-                x = np.random.uniform(problem.bounds.lb, problem.bounds.ub).astype(
-                    float
-                )
-                problem(x)
-                evaluation_count += 1
-
-        except Exception as e:
-            print(
-                f"SMAC (BlackBoxFacade) failed: {e}. Falling back to random sampling."
+        # If SMAC stops early, consume remaining budget with random search
+        while evaluation_count < budget and problem.state.evaluations < budget:
+            x = np.random.uniform(problem.bounds.lb, problem.bounds.ub).astype(
+                float
             )
-            while evaluation_count < budget and problem.state.evaluations < budget:
-                x = np.random.uniform(problem.bounds.lb, problem.bounds.ub).astype(
-                    float
-                )
-                problem(x)
-                evaluation_count += 1
+            problem(x)
+            evaluation_count += 1
+

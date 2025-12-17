@@ -2,7 +2,7 @@ import sys
 import argparse
 from benchmark import run_benchmark
 from optimizers import create_optimizer, get_available_optimizers
-from config import FUNCTIONS, INSTANCES, DIMENSIONS, BUDGET_FACTOR, LOG_ROOT
+from optimizers.config import FUNCTIONS, INSTANCES, DIMENSIONS, BUDGET_FACTOR, LOG_ROOT
 
 
 def parse_args() -> argparse.Namespace:

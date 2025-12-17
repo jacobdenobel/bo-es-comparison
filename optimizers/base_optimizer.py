@@ -17,7 +17,7 @@ class BaseOptimizer(abc.ABC):
         self.name = name
 
     @abc.abstractmethod
-    def optimize(self, problem: ioh.ProblemType, budget: int) -> None:
+    def optimize(self, problem: ioh.ProblemType, budget: int, seed: int) -> None:
         """
         Optimize the given problem within the budget.
 
@@ -25,6 +25,9 @@ class BaseOptimizer(abc.ABC):
             problem: IOH problem instance
             budget: Maximum number of function evaluations
         """
+        pass
+    
+    def reset(self) -> None:
         pass
 
 

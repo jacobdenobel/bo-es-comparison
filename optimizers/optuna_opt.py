@@ -6,25 +6,16 @@ import numpy as np
 import ioh
 from .base_optimizer import BaseOptimizer
 
-try:
-    import optuna
-
-    OPTUNA_AVAILABLE = True
-except ImportError:
-    OPTUNA_AVAILABLE = False
-    print("Warning: optuna not available. Optuna optimizer will not work.")
-
+import optuna
 
 class OptunaOptimizer(BaseOptimizer):
     """Optuna TPE optimizer."""
 
     def __init__(self, sampler_name="TPE"):
         super().__init__(f"Optuna-{sampler_name}")
-        if not OPTUNA_AVAILABLE:
-            raise ImportError("optuna package is required for Optuna optimizer")
         self.sampler_name = sampler_name
 
-    def optimize(self, problem: ioh.ProblemType, budget: int) -> None:
+    def optimize(self, problem: ioh.ProblemType, budget: int, seed:int) -> None:
         """
         Optuna optimization using TPE sampler.
 

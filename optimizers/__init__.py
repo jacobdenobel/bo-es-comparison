@@ -49,7 +49,6 @@ def create_optimizer(optimizer_name: str):
         "optuna_cmaes": lambda: OptunaOptimizer("CmaEs"),
         "smac3": SMACOptimizer,
     }
-
     # Add new optimizers if imports succeeded
     if SKOPT_IMPORT_OK:
         optimizers.update(

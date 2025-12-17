@@ -15,7 +15,7 @@ from itertools import product
 import ioh
 from typing import List, Optional
 
-from config import (
+from optimizers.config import (
     LOG_ROOT,
     FUNCTIONS,
     INSTANCES,
@@ -55,13 +55,16 @@ def run_single_experiment(
     for rep in range(N_REP):
         seed = RANDOM_SEED + (function_id * instance_id * dimension * (1 + rep) * 7)
         set_seeds(seed)
-
-        # Reset optimizer state per repetition if supported
-        if hasattr(optimizer, "reset") and callable(getattr(optimizer, "reset")):
-            optimizer.reset()
-
-        optimizer.optimize(problem, budget)
+        optimizer.reset()
+        optimizer.optimize(problem, budget, seed)
+        
+        print(optimizer.__class__.__name__, 
+              problem.meta_data, 
+              problem.state.evaluations, 
+              problem.state.current_best
+        )
         problem.reset()
+    breakpoint()
        
 
 def run_benchmark(
@@ -76,8 +79,6 @@ def run_benchmark(
     """
     Run complete benchmark comparing multiple optimizers.
     """
-    
-
     for optimizer in optimizers:
         logger = None
         if log_results:
@@ -86,12 +87,10 @@ def run_benchmark(
                 folder_name=optimizer.name,
                 root=log_root,
             )
-        breakpoint()
         for dim in dimensions:
             budget = budget_factor * dim
             for fid in functions:
                 for iid in instances:
-                    experiment_count += 1
                     run_single_experiment(
                         optimizer=optimizer,
                         function_id=fid,
@@ -128,11 +127,11 @@ def main() -> None:
     
     run_benchmark(
         optimizers=optimizers,
-        functions=FUNCTIONS,
-        instances=INSTANCES,
-        dimensions=DIMENSIONS,
+        functions=FUNCTIONS[:1],
+        instances=INSTANCES[:1],
+        dimensions=DIMENSIONS[:1],
         budget_factor=BUDGET_FACTOR,
-        log_results=True,
+        log_results=False,
         log_root=LOG_ROOT,
     )
 
