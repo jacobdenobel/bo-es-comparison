@@ -1,70 +1,71 @@
-"""
-Meta's Ax optimizer implementation.
-"""
-
 import numpy as np
 import ioh
+from ax.service.ax_client import AxClient, ObjectiveProperties
+from ax.modelbridge.generation_strategy import GenerationStrategy
+from ax.modelbridge.generation_node import GenerationNode
+from ax.modelbridge.registry import Models
+from ax.modelbridge.generation_node import GenerationStep  # older Ax versions use GenerationStep
+
+
 from .base_optimizer import BaseOptimizer
 
 
-from ax.service.ax_client import AxClient, ObjectiveProperties
+class AxBoTorchOptimizer(BaseOptimizer):
+    """Ax optimizer using BoTorch-based Bayesian Optimization."""
 
-
-class AxOptimizer(BaseOptimizer):
-    """Meta's Ax (Adaptive Experimentation) optimizer."""
-
-    def __init__(self, strategy="default"):
+    def __init__(self, strategy="sobol+botorch", n_init=16):
         super().__init__(f"Ax-{strategy}")
         self.strategy = strategy
+        self.n_init = n_init
+
+    def _make_generation_strategy(self, budget: int) -> GenerationStrategy:
+        # NOTE: API differs slightly across Ax versions.
+        # This pattern is the most common: Sobol -> BoTorch.
+        return GenerationStrategy(
+            steps=[
+                GenerationStep(
+                    model=Models.SOBOL,
+                    num_trials=min(self.n_init, budget),
+                    min_trials_observed=min(self.n_init, budget),
+                    max_parallelism=1,  # set >1 if you can evaluate in parallel
+                    model_kwargs={"seed": None},  # AxClient already seeded
+                ),
+                GenerationStep(
+                    model=Models.BOTORCH_MODULAR,  # BoTorch-powered Bayesian optimization
+                    num_trials=max(0, budget - self.n_init),
+                    max_parallelism=1,
+                ),
+            ]
+        )
 
     def optimize(self, problem: ioh.ProblemType, budget: int, seed: int) -> None:
-        """
-        Ax optimization.
+        gs = self._make_generation_strategy(budget)
 
-        Args:
-            problem: IOH problem instance
-            budget: Maximum number of function evaluations
-        """
-        # Create Ax client
-        ax_client = AxClient(random_seed=seed)
+        ax_client = AxClient(random_seed=seed, generation_strategy=gs)
 
-        # Create experiment
         parameters = []
         for i in range(problem.meta_data.n_variables):
             parameters.append(
                 {
                     "name": f"x{i}",
                     "type": "range",
-                    "bounds": [
-                        float(problem.bounds.lb[i]),
-                        float(problem.bounds.ub[i]),
-                    ],
+                    "bounds": [float(problem.bounds.lb[i]), float(problem.bounds.ub[i])],
+                    "value_type": "float",
                 }
             )
 
-        # NEW API: objectives dict instead of objective_name/minimize
         ax_client.create_experiment(
             name="bbob_experiment",
             parameters=parameters,
             objectives={"objective": ObjectiveProperties(minimize=True)},
-            
         )
 
-        # Run optimization loop
         for _ in range(budget):
-            # Get next trial
-            parameters, trial_index = ax_client.get_next_trial()
+            params, trial_index = ax_client.get_next_trial()
+            x = np.array([params[f"x{i}"] for i in range(problem.meta_data.n_variables)], dtype=float)
+            y = float(problem(x))
 
-            # Convert to numpy array
-            x = np.array(
-                [parameters[f"x{i}"] for i in range(problem.meta_data.n_variables)]
-            )
-
-            # Evaluate
-            y = problem(x)
-
-            # Complete trial
             ax_client.complete_trial(
-                trial_index=trial_index, raw_data={"objective": y}
+                trial_index=trial_index,
+                raw_data={"objective": y},
             )
-            

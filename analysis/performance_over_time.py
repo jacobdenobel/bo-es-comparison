@@ -138,7 +138,7 @@ class ResultAnalyzer:
 
             if df is not None and len(df) > 0:
                 try:
-                    iohinspector.plot.single_function_fixedbudget(df, ax=ax)
+                    iohinspector.plot.single_function_fixedbudget(df, ax=ax, scale_xlog=False)
                     ax.grid(True, alpha=0.3)
 
                     # Add function ID in upper right corner
